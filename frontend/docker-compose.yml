@@ -1,0 +1,16 @@
+services:
+  frontend:
+    container_name: frontend
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    name: app-network
+    external: true
