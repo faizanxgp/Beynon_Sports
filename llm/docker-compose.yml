@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  anythingllm:
+    image: mintplexlabs/anythingllm
+    container_name: llm
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - anythingllm_storage:/app/server/storage
+    environment:
+      - STORAGE_DIR=/app/server/storage
+    networks:
+      - app-network
+
+volumes:
+  anythingllm_storage:
+    driver: local
+
+networks:
+  app-network:
+    external: true
