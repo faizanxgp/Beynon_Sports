@@ -1,27 +1,135 @@
-version: '3.8'
-
 services:
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    networks:
-      - app-network
-
-  keycloak:
-    build: ./keycloak
-    ports:
-      - "8080:8080"
-    networks:
-      - app-network
-
+  # Backend API Service
   backend:
     build: ./backend
+    container_name: backend
     ports:
       - "8000:8000"
+    environment:
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_REALM_NAME=team_online
+      - KEYCLOAK_BACKEND_CLIENT_ID=benyon_be
+    volumes:
+      - ./backend/data/remote:/app/data/remote
+      - ./backend/data/backup:/app/data/backup
+      - ./backend/data/preview:/app/data/preview
     networks:
       - app-network
+    restart: unless-stopped
+
+  # Keycloak Authentication Service
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    command:
+      - start-dev
+      - --hostname
+      - localhost
+      - --hostname-strict=false
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Frontend Service
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_KEYCLOAK_URL=http://localhost:8080
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # LLM Service
+  anythingllm:
+    image: mintplexlabs/anythingllm
+    container_name: llm
+    ports:
+      - "3001:3001"
+    volumes:
+      - anythingllm_storage:/app/server/storage
+    environment:
+      - STORAGE_DIR=/app/server/storage
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Qdrant Vector Database
+  qdrant:
+    build: ./qdrant
+    container_name: qdrant
+    ports:
+      - "6335:6333"
+      - "6336:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Prometheus Monitoring
+  prometheus:
+    build: ./prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus/data
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Grafana Dashboard
+  grafana:
+    build: ./grafana
+    container_name: grafana
+    ports:
+      - "3002:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+      - keycloak
+      - anythingllm
+      - qdrant
+      - prometheus
+      - grafana
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  keycloak_data:
+  anythingllm_storage:
+  qdrant_storage:
+  prometheus_data:
+  grafana_data:
 
 networks:
   app-network:
-    external: true
+    driver: bridge

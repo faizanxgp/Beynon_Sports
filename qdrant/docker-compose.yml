@@ -1,0 +1,20 @@
+services:
+  qdrant:
+    build: .
+    container_name: qdrant
+    ports:
+      - "6335:6333"
+      - "6336:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  qdrant_storage:
+    driver: local
+
+networks:
+  app-network:
+    external: true

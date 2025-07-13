@@ -6,7 +6,6 @@ import Header from "./header";
 import Footer from "./footer";
 import { LoadingProvider, useLoading } from "./context/LoadingContext";
 import GlobalLoadingSpinner from "./components/GlobalLoadingSpinner";
-import ChatWidget from "../componenets/ChatWidget";
 import { setLoadingCallbacks } from "../services/api";
 
 
@@ -63,7 +62,6 @@ const LayoutContent = ({title, container, ...props}) => {
           </div>
       </div>
       <GlobalLoadingSpinner />
-      <ChatWidget />
     </>
   );
 };

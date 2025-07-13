@@ -1,0 +1,19 @@
+services:
+  prometheus:
+    build: .
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus/data
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+    driver: local
+
+networks:
+  app-network:
+    external: true
